@@ -8,141 +8,162 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft JhengHei", sans-serif; }
-        body { background: #1a1a1a; color: #fff; }
+        body { background: #1a1a1a; color: #fff; overflow: hidden; } /* 禁止頁面整體滑動 */
         .header { padding: 15px; text-align: center; background: #2d2d2d; }
         .header h1 { font-size: 20px; margin-bottom: 5px; }
         .header p { font-size: 14px; opacity: 0.8; }
-        #map { height: 85vh; width: 100%; position: relative; z-index: 1; }
+        #map { height: calc(100vh - 80px); width: 100%; position: relative; z-index: 1; }
 
-        /* 折疊按鈕：手機版顯示，電腦版隱藏 */
+        /* 書籤式折疊按鈕：固定在螢幕邊緣，像書籤一樣 */
         .toggle-btn {
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             color: #fff;
-            border: 2px solid #fff;
-            border-radius: 8px;
-            padding: 14px 8px;
-            font-size: 20px;
-            font-weight: bold;
+            border: 2px solid #e63946;
+            border-radius: 0 10px 10px 0;
+            padding: 12px 8px;
+            font-size: 18px;
             cursor: pointer;
             z-index: 99999;
-            transition: all 0.3s;
-            width: 44px;
-            height: 88px;
-            display: none; /* 電腦版預設隱藏 */
+            transition: all 0.2s;
+            width: 40px;
+            height: 80px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            -webkit-transform: translateZ(0);
-            transform: translateZ(0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
-        .toggle-legend { left: 0; border-radius: 0 8px 8px 0; }
-        .toggle-filter { right: 0; border-radius: 8px 0 0 8px; }
-        .toggle-btn:hover { background: #e63946; border-color: #e63946; }
+        /* 左側書籤（控制圖例） */
+        .toggle-legend {
+            left: 0;
+            border-radius: 0 10px 10px 0;
+        }
+        /* 右側書籤（控制篩選） */
+        .toggle-filter {
+            right: 0;
+            border-radius: 10px 0 0 10px;
+        }
+        .toggle-btn:hover {
+            background: #e63946;
+            border-color: #fff;
+        }
 
-        /* 圖例面板：電腦版預設顯示，手機版預設隱藏 */
+        /* 圖例面板：書籤式滑入滑出 */
         .legend {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.85);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            z-index: 998;
-            min-width: 220px;
-            transition: transform 0.3s ease;
-            transform: translateX(0);
+            position: fixed;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 0 10px 10px 0;
+            font-size: 13px;
+            z-index: 99998;
+            min-width: 240px;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* 彈性動畫 */
+            transform: translate(-100%, -50%); /* 預設隱藏在左側 */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-        .legend.collapsed { transform: translateX(-120%); }
-        .legend h4 { margin-bottom: 8px; font-size: 14px; }
-        .legend-item { display: flex; align-items: center; margin: 4px 0; }
-        .legend-color { width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; }
+        .legend.show {
+            transform: translate(0, -50%); /* 展開：滑入螢幕 */
+        }
+        .legend h4 { margin-bottom: 10px; font-size: 15px; color: #e63946; }
+        .legend-item { display: flex; align-items: center; margin: 6px 0; }
+        .legend-color { width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; }
 
-        /* 篩選面板：電腦版預設顯示，手機版預設隱藏 */
+        /* 篩選面板：書籤式滑入滑出 */
         .filter-panel {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.85);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            z-index: 999;
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 10px 0 0 10px;
+            font-size: 13px;
+            z-index: 99998;
             min-width: 280px;
-            transition: transform 0.3s ease;
-            transform: translateX(0);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform: translate(100%, -50%); /* 預設隱藏在右側 */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-        .filter-panel.collapsed { transform: translateX(120%); }
-        .filter-title { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #fff; }
-        .rank-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+        .filter-panel.show {
+            transform: translate(0, -50%); /* 展開：滑入螢幕 */
+        }
+        .filter-title { font-size: 15px; font-weight: bold; margin-bottom: 10px; color: #e63946; }
+        .rank-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
         .rank-btn {
-            padding: 5px 8px;
+            padding: 7px 10px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 13px;
             color: #fff;
-            opacity: 0.8;
+            opacity: 0.85;
             transition: all 0.2s;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
-        .rank-btn.active { opacity: 1; transform: scale(1.05); }
+        .rank-btn.active { opacity: 1; transform: scale(1.05); box-shadow: 0 0 8px rgba(230, 57, 70, 0.5); }
         .area-buttons { 
             display: flex; 
             flex-wrap: wrap; 
-            gap: 4px; 
+            gap: 5px; 
             max-height: 120px;
             overflow-y: auto;
-            padding-right: 5px;
-            margin-bottom: 8px;
+            padding-right: 6px;
+            margin-bottom: 10px;
         }
         .area-btn {
-            padding: 4px 6px;
+            padding: 5px 8px;
             border: 1px solid #666;
             background: #333;
             color: #fff;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 12px;
             white-space: nowrap;
             transition: all 0.2s;
         }
-        .area-btn.active { background: #e63946; border-color: #e63946; }
+        .area-btn.active { background: #e63946; border-color: #fff; }
         .reset-btn {
             width: 100%;
-            padding: 6px;
+            padding: 8px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             background: #577590;
             color: #fff;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 13px;
+            transition: all 0.2s;
         }
         .reset-btn:hover { background: #43aa8b; }
 
         /* 彈窗樣式優化 */
-        .leaflet-popup-content { color: #333; width: 200px !important; }
-        .popup-title { font-weight: bold; font-size: 16px; margin-bottom: 6px; color: #e63946; }
-        .popup-info { font-size: 14px; margin: 3px 0; }
+        .leaflet-popup-content { color: #333; width: 220px !important; }
+        .popup-title { font-weight: bold; font-size: 17px; margin-bottom: 7px; color: #e63946; }
+        .popup-info { font-size: 15px; margin: 4px 0; }
 
-        /* 手機版適配：768px以下生效 */
-        @media (max-width: 768px) {
-            /* 顯示折疊按鈕 */
-            .toggle-btn { display: flex; }
-            /* 預設隱藏面板 */
-            .legend { transform: translateX(-120%); min-width: auto; width: calc(100vw - 20px); max-width: 320px; }
-            .filter-panel { transform: translateX(120%); min-width: auto; width: calc(100vw - 20px); max-width: 320px; }
-            /* 調整按鈕排版 */
-            .rank-buttons { grid-template-columns: repeat(2, 1fr); }
-            .area-buttons { max-height: 90px; }
-            /* 調整地圖高度 */
-            #map { height: calc(100vh - 80px); }
+        /* 電腦版優化：面板預設展開，按鈕隱藏 */
+        @media (min-width: 769px) {
+            .toggle-btn { display: none; } /* 電腦版隱藏書籤按鈕 */
+            .legend { 
+                transform: translate(0, -50%); /* 預設展開 */
+                position: absolute;
+                top: auto;
+                bottom: 20px;
+                left: 20px;
+                border-radius: 10px;
+            }
+            .filter-panel { 
+                transform: translate(0, -50%); /* 預設展開 */
+                position: absolute;
+                top: auto;
+                bottom: 20px;
+                right: 20px;
+                border-radius: 10px;
+            }
         }
     </style>
 </head>
@@ -153,9 +174,9 @@
     </div>
     <div id="map"></div>
 
-    <!-- 左側折疊按鈕（手機版顯示） -->
+    <!-- 左側書籤按鈕（控制圖例） -->
     <button class="toggle-btn toggle-legend" id="toggleLegend">≡</button>
-    <!-- 圖例：左下角 -->
+    <!-- 圖例面板（書籤式） -->
     <div class="legend" id="legendPanel">
         <h4>評級 </h4>
         <div class="legend-item"><div class="legend-color" style="background: #e63946;"></div>T0 (敲級好吃)</div>
@@ -167,14 +188,14 @@
         <div class="legend-item"><div class="legend-color" style="background: #277da1;"></div>T6 (犬不爭食)</div>
     </div>
 
-    <!-- 右側折疊按鈕（手機版顯示） -->
+    <!-- 右側書籤按鈕（控制篩選） -->
     <button class="toggle-btn toggle-filter" id="toggleFilter">≡</button>
-    <!-- 篩選面板：右下角 -->
+    <!-- 篩選面板（書籤式） -->
     <div class="filter-panel" id="filterPanel">
         <div class="filter-title">Tier (常見參考連鎖店)</div>
         <div class="rank-buttons">
             <button class="rank-btn" style="background: #e63946;" data-rank="T0">T0 (Shake Shack)</button>
-            <button class="rank-btn" style="background: #f77f00;" data-rank="T1">T1 (Five Guys)</button>
+            <button class="rank-btn" style="background: #f77f00;" data-rank="T1">T1 (德州鮮切)</button>
             <button class="rank-btn" style="background: #fcbf49;" data-rank="T2">T2 (Subway)</button>
             <button class="rank-btn" style="background: #e9f542;" data-rank="T3">T3 (貳樓)</button>
             <button class="rank-btn" style="background: #43aa8b;" data-rank="T4">T4 (漢堡王)</button>
@@ -210,7 +231,7 @@
             maxZoom: 18
         }).addTo(map);
 
-        // 等級顏色映射（僅 T0-T6）
+        // 等級顏色映射
         const rankColorMap = {
             T0: '#e63946', T1: '#f77f00', T2: '#fcbf49',
             T3: '#e9f542', T4: '#43aa8b', T5: '#577590', T6: '#277da1'
@@ -249,7 +270,7 @@
                     fillOpacity: 0.9
                 });
 
-                // 綁定提示和彈窗（顯示中文標語）
+                // 綁定提示和彈窗
                 const currentRankLabel = rankLabelMap[shop.rank] || shop.rank;
                 marker.bindTooltip(`${currentRankLabel} - ${shop.name}`, { permanent: false, direction: 'top' });
                 marker.bindPopup(`
@@ -270,26 +291,18 @@
             map.fitBounds(bounds, { padding: [50, 50] });
         }
 
-        // 篩選標記：同時考慮等級和行政區
+        // 篩選標記邏輯
         function filterMarkers() {
             allMarkers.forEach(marker => {
                 const shop = marker.shopData;
-                // 等級篩選：無選中則通過，有選中則匹配
                 const rankMatch = !currentRank || shop.rank === currentRank;
-                // 行政區篩選：無選中則通過，有選中則匹配（兼容「東區」等別名）
                 const areaMatch = !currentArea || 
                     (shop.area || '').includes(currentArea.replace('區', '')) ||
                     (currentArea === '大安區' && (shop.area || '') === '東區');
                 
-                // 同時滿足兩個條件才顯示
-                if (rankMatch && areaMatch) {
-                    marker.addTo(map);
-                } else {
-                    map.removeLayer(marker);
-                }
+                rankMatch && areaMatch ? marker.addTo(map) : map.removeLayer(marker);
             });
 
-            // 篩選後調整視野
             const visibleMarkers = allMarkers.filter(m => map.hasLayer(m));
             if (visibleMarkers.length > 0) {
                 const bounds = L.latLngBounds(visibleMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
@@ -303,17 +316,9 @@
         // 綁定等級按鈕事件
         document.querySelectorAll('.rank-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // 切換當前等級：再次點擊則取消
-                if (currentRank === btn.dataset.rank) {
-                    currentRank = null;
-                    btn.classList.remove('active');
-                } else {
-                    // 先取消其他等級按鈕的激活狀態
-                    document.querySelectorAll('.rank-btn').forEach(b => b.classList.remove('active'));
-                    currentRank = btn.dataset.rank;
-                    btn.classList.add('active');
-                }
-                // 執行聯合篩選
+                currentRank = currentRank === btn.dataset.rank ? null : btn.dataset.rank;
+                document.querySelectorAll('.rank-btn').forEach(b => b.classList.remove('active'));
+                if (currentRank) btn.classList.add('active');
                 filterMarkers();
             });
         });
@@ -321,17 +326,9 @@
         // 綁定行政區按鈕事件
         document.querySelectorAll('.area-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // 切換當前行政區：再次點擊則取消
-                if (currentArea === btn.dataset.area) {
-                    currentArea = null;
-                    btn.classList.remove('active');
-                } else {
-                    // 先取消其他行政區按鈕的激活狀態
-                    document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
-                    currentArea = btn.dataset.area;
-                    btn.classList.add('active');
-                }
-                // 執行聯合篩選
+                currentArea = currentArea === btn.dataset.area ? null : btn.dataset.area;
+                document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
+                if (currentArea) btn.classList.add('active');
                 filterMarkers();
             });
         });
@@ -346,22 +343,20 @@
             map.fitBounds(bounds, { padding: [50, 50] });
         });
 
-        // 折疊/展開圖例面板（手機版）
+        // 書籤式折疊核心邏輯（同一頁面內滑動，無跳轉）
         document.getElementById('toggleLegend').addEventListener('click', () => {
-            document.getElementById('legendPanel').classList.toggle('collapsed');
+            document.getElementById('legendPanel').classList.toggle('show');
         });
-
-        // 折疊/展開篩選面板（手機版）
         document.getElementById('toggleFilter').addEventListener('click', () => {
-            document.getElementById('filterPanel').classList.toggle('collapsed');
+            document.getElementById('filterPanel').classList.toggle('show');
         });
 
-        // 修復地圖渲染延遲
+        // 修復地圖渲染
         setTimeout(() => {
             if (map) map.invalidateSize(true);
         }, 100);
 
-        // 初始化執行
+        // 初始化
         initMarkers();
     </script>
 </body>
