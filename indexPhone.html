@@ -14,14 +14,14 @@
         .header p { font-size: 12px; opacity: 0.8; }
         #map { height: calc(100vh - 80px); width: 100%; }
 
-        /* 新增：書籤式折疊按鈕（僅手機版顯示） */
+        /* 新增：書籤式折疊按鈕（僅手機版顯示）- 透明僅框線 */
         .toggle-btn {
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0,0,0,0.95);
+            background: transparent; /* 完全透明底色 */
             color: #fff;
-            border: 2px solid #e63946;
+            border: 2px solid #e63946; /* 僅保留紅色框線 */
             border-radius: 10px 0 0 10px;
             padding: 12px 8px;
             font-size: 18px;
@@ -33,7 +33,15 @@
             display: none; /* 電腦版隱藏 */
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            box-shadow: none; /* 移除陰影，避免擋地圖 */
+            /* 手機版書籤優化：右側無邊框 */
+            border-width: 2px 0 2px 2px;
+        }
+        /* 按鈕hover效果 */
+        .toggle-btn:hover {
+            background: #e63946;
+            color: #fff;
+            border-color: #fff;
         }
         
         /* 手機版：篩選面板改為頂部滑動欄 + 可折疊 */
@@ -141,14 +149,14 @@
             .legend-item { display: flex; align-items: center; margin: 3px 0; }
             .legend-color { width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; }
 
-            /* 新增：圖例折疊按鈕（手機版） */
+            /* 新增：圖例折疊按鈕（手機版）- 透明僅框線 */
             .toggle-legend-btn {
                 position: fixed;
                 bottom: 60px;
                 left: 10px;
-                background: rgba(0,0,0,0.95);
+                background: transparent; /* 完全透明底色 */
                 color: #fff;
-                border: 2px solid #e63946;
+                border: 2px solid #e63946; /* 僅保留紅色框線 */
                 border-radius: 50%;
                 width: 40px;
                 height: 40px;
@@ -157,13 +165,43 @@
                 justify-content: center;
                 cursor: pointer;
                 z-index: 99999;
-                box-shadow: 0 0 8px rgba(0,0,0,0.5);
+                box-shadow: none; /* 移除陰影 */
+                transition: all 0.2s;
+            }
+            /* 圖例按鈕hover效果 */
+            .toggle-legend-btn:hover {
+                background: #e63946;
+                color: #fff;
+                border-color: #fff;
             }
         }
 
-        /* 桌面版：保持原有布局，隱藏折疊按鈕 */
+        /* 桌面版：新增折疊按鈕 + 透明樣式 */
         @media (min-width: 769px) {
-            .toggle-btn, .toggle-legend-btn { display: none; } /* 隱藏折疊按鈕 */
+            /* 原隱藏邏輯修改：顯示折疊按鈕 */
+            .toggle-btn, .toggle-legend-btn { 
+                display: flex; 
+                box-shadow: none;
+                background: transparent;
+                border: 2px solid #e63946;
+                color: #fff;
+            }
+            /* 電腦版篩選按鈕位置 */
+            .toggle-btn {
+                top: auto;
+                bottom: 20px;
+                right: 20px;
+                transform: none;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                border-width: 2px;
+            }
+            /* 電腦版圖例按鈕位置 */
+            .toggle-legend-btn {
+                bottom: 20px;
+                left: 20px;
+            }
             
             .filter-panel {
                 position: absolute;
@@ -175,8 +213,18 @@
                 font-size: 12px;
                 z-index: 999;
                 min-width: 280px;
-                transform: none !important; /* 取消手機版折疊邏輯 */
+                /* 新增：電腦版折疊動畫 */
+                transition: all 0.3s ease;
+                transform: translateX(0);
+                opacity: 1;
             }
+            /* 電腦版篩選面板收起狀態 */
+            .filter-panel.collapsed {
+                transform: translateX(110%);
+                opacity: 0;
+                pointer-events: none;
+            }
+
             .filter-title { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #fff; }
             .rank-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
             .rank-btn {
@@ -236,8 +284,18 @@
                 font-size: 12px;
                 z-index: 998;
                 min-width: 220px;
-                transform: none !important; /* 取消手機版折疊邏輯 */
+                /* 新增：電腦版折疊動畫 */
+                transition: all 0.3s ease;
+                transform: translateX(0);
+                opacity: 1;
             }
+            /* 電腦版圖例面板收起狀態 */
+            .legend.collapsed {
+                transform: translateX(-110%);
+                opacity: 0;
+                pointer-events: none;
+            }
+            
             .legend h4 { margin-bottom: 8px; font-size: 14px; }
             .legend-item { display: flex; align-items: center; margin: 4px 0; }
             .legend-color { width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; }
@@ -450,14 +508,28 @@
             map.fitBounds(bounds, { padding: [50, 50] });
         });
 
-        // 新增：書籤式折疊邏輯（篩選面板）
+        // 新增：折疊邏輯 - 兼容電腦+手機版
         document.getElementById('toggleFilterBtn').addEventListener('click', () => {
-            document.getElementById('filterPanel').classList.toggle('show');
+            const filterPanel = document.getElementById('filterPanel');
+            if (window.innerWidth >= 769) {
+                // 電腦版：切換 collapsed 類
+                filterPanel.classList.toggle('collapsed');
+            } else {
+                // 手機版：切換 show 類
+                filterPanel.classList.toggle('show');
+            }
         });
 
-        // 新增：書籤式折疊邏輯（圖例面板）
+        // 新增：圖例折疊邏輯 - 兼容電腦+手機版
         document.getElementById('toggleLegendBtn').addEventListener('click', () => {
-            document.getElementById('legendPanel').classList.toggle('show');
+            const legendPanel = document.getElementById('legendPanel');
+            if (window.innerWidth >= 769) {
+                // 電腦版：切換 collapsed 類
+                legendPanel.classList.toggle('collapsed');
+            } else {
+                // 手機版：切換 show 類
+                legendPanel.classList.toggle('show');
+            }
         });
 
         // 初始化執行
