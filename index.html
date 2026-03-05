@@ -7,12 +7,31 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        /* 核心修復：html/body 設置高度，確保地圖高度計算正確 */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft JhengHei", sans-serif; }
-        body { background: #1a1a1a; color: #fff; overflow: hidden; } /* 禁止頁面整體滑動 */
-        .header { padding: 15px; text-align: center; background: #2d2d2d; }
+        body { background: #1a1a1a; color: #fff; } /* 移除 overflow: hidden 避免電腦版地圖被隱藏 */
+        .header { 
+            padding: 15px; 
+            text-align: center; 
+            background: #2d2d2d; 
+            height: 80px; /* 固定header高度，匹配地圖的 calc(100vh - 80px) */
+            box-sizing: border-box;
+        }
         .header h1 { font-size: 20px; margin-bottom: 5px; }
         .header p { font-size: 14px; opacity: 0.8; }
-        #map { height: calc(100vh - 80px); width: 100%; position: relative; z-index: 1; }
+        /* 核心修復：地圖容器設置 min-height + 相對定位，確保電腦版顯示 */
+        #map { 
+            height: calc(100vh - 80px); 
+            width: 100%; 
+            position: relative; 
+            z-index: 1; 
+            min-height: 500px; /* 電腦版保底高度 */
+        }
 
         /* 書籤式折疊按鈕：固定在螢幕邊緣，像書籤一樣 */
         .toggle-btn {
@@ -145,24 +164,28 @@
         .popup-title { font-weight: bold; font-size: 17px; margin-bottom: 7px; color: #e63946; }
         .popup-info { font-size: 15px; margin: 4px 0; }
 
-        /* 電腦版優化：面板預設展開，按鈕隱藏 */
+        /* 電腦版優化：面板預設展開，按鈕隱藏（核心修復定位問題） */
         @media (min-width: 769px) {
             .toggle-btn { display: none; } /* 電腦版隱藏書籤按鈕 */
             .legend { 
-                transform: translate(0, -50%); /* 預設展開 */
-                position: absolute;
+                transform: translate(0, 0); /* 修復：取消垂直居中，避免偏移 */
+                position: absolute; /* 相對於地圖容器定位，不是整個螢幕 */
                 top: auto;
                 bottom: 20px;
                 left: 20px;
                 border-radius: 10px;
+                /* 新增：重置transform，只保留位置屬性 */
+                transform: none;
             }
             .filter-panel { 
-                transform: translate(0, -50%); /* 預設展開 */
-                position: absolute;
+                transform: translate(0, 0); /* 修復：取消垂直居中 */
+                position: absolute; /* 相對於地圖容器定位 */
                 top: auto;
                 bottom: 20px;
                 right: 20px;
                 border-radius: 10px;
+                /* 新增：重置transform，只保留位置屬性 */
+                transform: none;
             }
         }
     </style>
@@ -255,7 +278,38 @@
 
         // 初始化所有店家標記
         function initMarkers() {
-            if (!burgerData || burgerData.length === 0) return;
+            if (!burgerData || burgerData.length === 0) {
+                // 沒有data.js時，添加默認測試點，確保地圖能看到內容
+                const testData = [
+                    { name: 'Shake Shack (信義區)', rank: 'T0', area: '信義區', lat: 25.0375, lng: 121.5646, meat: '安格斯牛肉', price: 'NT$180-' },
+                    { name: '漢堡王 (大安區)', rank: 'T4', area: '大安區', lat: 25.0458, lng: 121.5219, meat: '牛肉', price: 'NT$99-' },
+                    { name: '麥當勞 (中山區)', rank: 'T5', area: '中山區', lat: 25.0602, lng: 121.5139, meat: '牛肉', price: 'NT$79-' }
+                ];
+                testData.forEach(shop => {
+                    const marker = L.circleMarker([shop.lat, shop.lng], {
+                        radius: 9,
+                        fillColor: rankColorMap[shop.rank] || '#6c757d',
+                        color: "#fff",
+                        weight: 1,
+                        fillOpacity: 0.9
+                    });
+                    const currentRankLabel = rankLabelMap[shop.rank] || shop.rank;
+                    marker.bindTooltip(`${currentRankLabel} - ${shop.name}`, { permanent: false, direction: 'top' });
+                    marker.bindPopup(`
+                        <div class="popup-title">${shop.name}</div>
+                        <div class="popup-info">好吃等級：${currentRankLabel}</div>
+                        <div class="popup-info">地區：${shop.area || '台北市'}</div>
+                        <div class="popup-info">肉品：${shop.meat || '未標註'}</div>
+                        <div class="popup-info">價格：${shop.price || '未標註'}</div>
+                    `);
+                    marker.shopData = shop;
+                    allMarkers.push(marker);
+                    marker.addTo(map);
+                });
+                const bounds = L.latLngBounds(allMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+                return;
+            }
             
             allMarkers = [];
             burgerData.forEach(shop => {
@@ -351,10 +405,10 @@
             document.getElementById('filterPanel').classList.toggle('show');
         });
 
-        // 修復地圖渲染
+        // 修復地圖渲染（延遲刷新尺寸）
         setTimeout(() => {
             if (map) map.invalidateSize(true);
-        }, 100);
+        }, 200);
 
         // 初始化
         initMarkers();

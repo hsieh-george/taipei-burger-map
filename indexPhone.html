@@ -7,12 +7,30 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        /* 核心修復：設置 html/body 高度為 100%，避免地圖高度計算錯誤 */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft JhengHei", sans-serif; }
         body { background: #1a1a1a; color: #fff; }
-        .header { padding: 12px; text-align: center; background: #2d2d2d; }
+        .header { 
+            padding: 12px; 
+            text-align: center; 
+            background: #2d2d2d; 
+            height: 80px; /* 固定 header 高度，匹配地圖的 calc(100vh - 80px) */
+            box-sizing: border-box;
+        }
         .header h1 { font-size: 18px; margin-bottom: 4px; }
         .header p { font-size: 12px; opacity: 0.8; }
-        #map { height: calc(100vh - 80px); width: 100%; }
+        /* 核心修復：地圖容器設置 min-height + z-index，確保顯示 */
+        #map { 
+            height: calc(100vh - 80px); 
+            width: 100%; 
+            min-height: 400px; /* 保底高度，避免小螢幕消失 */
+            z-index: 1; /* 確保地圖在最底層，按鈕/面板在上方 */
+        }
 
         /* 新增：書籤式折疊按鈕（僅手機版顯示）- 透明僅框線 */
         .toggle-btn {
