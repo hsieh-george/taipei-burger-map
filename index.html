@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>台北市漢堡店家排名地圖 | T0-T6 等級</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,9 +12,57 @@
         .header { padding: 15px; text-align: center; background: #2d2d2d; }
         .header h1 { font-size: 20px; margin-bottom: 5px; }
         .header p { font-size: 14px; opacity: 0.8; }
-        #map { height: 85vh; width: 100%; }
-        
-        /* 筛选面板：右下角，层级更高 */
+        #map { height: 85vh; width: 100%; position: relative; z-index: 1; }
+
+        /* 折疊按鈕：手機版顯示，電腦版隱藏 */
+        .toggle-btn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            padding: 14px 8px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 99999;
+            transition: all 0.3s;
+            width: 44px;
+            height: 88px;
+            display: none; /* 電腦版預設隱藏 */
+            align-items: center;
+            justify-content: center;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        .toggle-legend { left: 0; border-radius: 0 8px 8px 0; }
+        .toggle-filter { right: 0; border-radius: 8px 0 0 8px; }
+        .toggle-btn:hover { background: #e63946; border-color: #e63946; }
+
+        /* 圖例面板：電腦版預設顯示，手機版預設隱藏 */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 998;
+            min-width: 220px;
+            transition: transform 0.3s ease;
+            transform: translateX(0);
+        }
+        .legend.collapsed { transform: translateX(-120%); }
+        .legend h4 { margin-bottom: 8px; font-size: 14px; }
+        .legend-item { display: flex; align-items: center; margin: 4px 0; }
+        .legend-color { width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; }
+
+        /* 篩選面板：電腦版預設顯示，手機版預設隱藏 */
         .filter-panel {
             position: absolute;
             bottom: 20px;
@@ -25,7 +73,10 @@
             font-size: 12px;
             z-index: 999;
             min-width: 280px;
+            transition: transform 0.3s ease;
+            transform: translateX(0);
         }
+        .filter-panel.collapsed { transform: translateX(120%); }
         .filter-title { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #fff; }
         .rank-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
         .rank-btn {
@@ -75,26 +126,24 @@
         }
         .reset-btn:hover { background: #43aa8b; }
 
-        /* 图例：左下角，避免重叠 */
-        .legend {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.85);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            z-index: 998;
-            min-width: 220px;
-        }
-        .legend h4 { margin-bottom: 8px; font-size: 14px; }
-        .legend-item { display: flex; align-items: center; margin: 4px 0; }
-        .legend-color { width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; }
-        
-        /* 弹窗样式优化 */
+        /* 彈窗樣式優化 */
         .leaflet-popup-content { color: #333; width: 200px !important; }
         .popup-title { font-weight: bold; font-size: 16px; margin-bottom: 6px; color: #e63946; }
         .popup-info { font-size: 14px; margin: 3px 0; }
+
+        /* 手機版適配：768px以下生效 */
+        @media (max-width: 768px) {
+            /* 顯示折疊按鈕 */
+            .toggle-btn { display: flex; }
+            /* 預設隱藏面板 */
+            .legend { transform: translateX(-120%); min-width: auto; width: calc(100vw - 20px); max-width: 320px; }
+            .filter-panel { transform: translateX(120%); min-width: auto; width: calc(100vw - 20px); max-width: 320px; }
+            /* 調整按鈕排版 */
+            .rank-buttons { grid-template-columns: repeat(2, 1fr); }
+            .area-buttons { max-height: 90px; }
+            /* 調整地圖高度 */
+            #map { height: calc(100vh - 80px); }
+        }
     </style>
 </head>
 <body>
@@ -104,8 +153,10 @@
     </div>
     <div id="map"></div>
 
-    <!-- 圖例：左下角，不與篩選面板重疊 -->
-    <div class="legend">
+    <!-- 左側折疊按鈕（手機版顯示） -->
+    <button class="toggle-btn toggle-legend" id="toggleLegend">≡</button>
+    <!-- 圖例：左下角 -->
+    <div class="legend" id="legendPanel">
         <h4>評級 </h4>
         <div class="legend-item"><div class="legend-color" style="background: #e63946;"></div>T0 (敲級好吃)</div>
         <div class="legend-item"><div class="legend-color" style="background: #f77f00;"></div>T1 (滿好吃的)</div>
@@ -116,12 +167,14 @@
         <div class="legend-item"><div class="legend-color" style="background: #277da1;"></div>T6 (犬不爭食)</div>
     </div>
 
+    <!-- 右側折疊按鈕（手機版顯示） -->
+    <button class="toggle-btn toggle-filter" id="toggleFilter">≡</button>
     <!-- 篩選面板：右下角 -->
-    <div class="filter-panel">
+    <div class="filter-panel" id="filterPanel">
         <div class="filter-title">Tier (常見參考連鎖店)</div>
         <div class="rank-buttons">
             <button class="rank-btn" style="background: #e63946;" data-rank="T0">T0 (Shake Shack)</button>
-            <button class="rank-btn" style="background: #f77f00;" data-rank="T1">T1 (德州鮮切)</button>
+            <button class="rank-btn" style="background: #f77f00;" data-rank="T1">T1 (Five Guys)</button>
             <button class="rank-btn" style="background: #fcbf49;" data-rank="T2">T2 (Subway)</button>
             <button class="rank-btn" style="background: #e9f542;" data-rank="T3">T3 (貳樓)</button>
             <button class="rank-btn" style="background: #43aa8b;" data-rank="T4">T4 (漢堡王)</button>
@@ -292,6 +345,21 @@
             const bounds = L.latLngBounds(allMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
             map.fitBounds(bounds, { padding: [50, 50] });
         });
+
+        // 折疊/展開圖例面板（手機版）
+        document.getElementById('toggleLegend').addEventListener('click', () => {
+            document.getElementById('legendPanel').classList.toggle('collapsed');
+        });
+
+        // 折疊/展開篩選面板（手機版）
+        document.getElementById('toggleFilter').addEventListener('click', () => {
+            document.getElementById('filterPanel').classList.toggle('collapsed');
+        });
+
+        // 修復地圖渲染延遲
+        setTimeout(() => {
+            if (map) map.invalidateSize(true);
+        }, 100);
 
         // 初始化執行
         initMarkers();
