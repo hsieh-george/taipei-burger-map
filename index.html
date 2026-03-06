@@ -14,33 +14,32 @@
             padding: 0; 
         }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft JhengHei", sans-serif; }
-        body { background: #1a1a1a; color: #fff; } /* 移除 overflow: hidden 避免電腦版地圖被隱藏 */
+        body { background: #1a1a1a; color: #fff; }
         .header { 
             padding: 15px; 
             text-align: center; 
             background: #2d2d2d; 
-            height: 80px; /* 固定header高度，匹配地圖的 calc(100vh - 80px) */
+            height: 80px; 
             box-sizing: border-box;
         }
         .header h1 { font-size: 20px; margin-bottom: 5px; }
         .header p { font-size: 14px; opacity: 0.8; }
-        /* 核心修復：地圖容器設置 min-height + 相對定位，確保電腦版顯示 */
         #map { 
             height: calc(100vh - 80px); 
             width: 100%; 
             position: relative; 
             z-index: 1; 
-            min-height: 500px; /* 電腦版保底高度 */
+            min-height: 500px; 
         }
 
-        /* 書籤式折疊按鈕：改為固定在左右下角（核心修改） */
+        /* 書籤式折疊按鈕：所有尺寸都顯示（核心修改） */
         .toggle-btn {
             position: fixed;
-            bottom: 20px; /* 固定在底部 */
+            bottom: 20px; 
             background: rgba(0,0,0,0.95);
             color: #fff;
             border: 2px solid #e63946;
-            border-radius: 50%; /* 圓形按鈕更適合角落 */
+            border-radius: 50%; 
             padding: 0;
             font-size: 18px;
             cursor: pointer;
@@ -52,24 +51,23 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            /* 移除原本的垂直居中屬性 */
             top: auto;
             transform: none;
         }
         /* 左下角書籤（控制圖例） */
         .toggle-legend {
-            left: 20px; /* 左下角 */
+            left: 20px; 
         }
         /* 右下角書籤（控制篩選） */
         .toggle-filter {
-            right: 20px; /* 右下角 */
+            right: 20px; 
         }
         .toggle-btn:hover {
             background: #e63946;
             border-color: #fff;
         }
 
-        /* 圖例面板：保留原樣式，僅調整避免被按鈕擋住（電腦版） */
+        /* 圖例面板：所有尺寸都使用滑入式（核心修改） */
         .legend {
             position: fixed;
             top: 50%;
@@ -81,7 +79,7 @@
             font-size: 13px;
             z-index: 99998;
             min-width: 240px;
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* 彈性動畫 */
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             transform: translate(-100%, -50%); /* 預設隱藏在左側 */
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
@@ -92,7 +90,7 @@
         .legend-item { display: flex; align-items: center; margin: 6px 0; }
         .legend-color { width: 14px; height: 14px; margin-right: 8px; border-radius: 50%; }
 
-        /* 篩選面板：保留原樣式，僅調整避免被按鈕擋住（電腦版） */
+        /* 篩選面板：所有尺寸都使用滑入式（核心修改） */
         .filter-panel {
             position: fixed;
             top: 50%;
@@ -164,29 +162,26 @@
         .popup-title { font-weight: bold; font-size: 17px; margin-bottom: 7px; color: #e63946; }
         .popup-info { font-size: 15px; margin: 4px 0; }
 
-        /* 電腦版優化：面板預設展開，按鈕隱藏（核心修復定位問題） */
+        /* 電腦版優化：僅調整面板尺寸，保留收縮功能（核心修改） */
         @media (min-width: 769px) {
-            .toggle-btn { display: none; } /* 電腦版隱藏書籤按鈕 */
-            .legend { 
-                transform: translate(0, 0); /* 修復：取消垂直居中，避免偏移 */
-                position: absolute; /* 相對於地圖容器定位，不是整個螢幕 */
-                top: auto;
-                bottom: 70px; /* 避開角落按鈕，往上移 */
-                left: 20px;
-                border-radius: 10px;
-                /* 新增：重置transform，只保留位置屬性 */
-                transform: none;
+            /* 保留按鈕，不隱藏 */
+            .toggle-btn { 
+                display: flex; 
+                /* 大屏下按鈕稍微放大，更易點擊 */
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
             }
-            .filter-panel { 
-                transform: translate(0, 0); /* 修復：取消垂直居中 */
-                position: absolute; /* 相對於地圖容器定位 */
-                top: auto;
-                bottom: 70px; /* 避開角落按鈕，往上移 */
-                right: 20px;
-                border-radius: 10px;
-                /* 新增：重置transform，只保留位置屬性 */
-                transform: none;
-            }
+            /* 大屏下面板寬度適當增加，內容更舒適 */
+            .legend { min-width: 260px; }
+            .filter-panel { min-width: 300px; }
+        }
+
+        /* 小屏電腦優化 */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .legend { min-width: 240px; }
+            .filter-panel { min-width: 280px; }
+            .toggle-btn { width: 45px; height: 45px; font-size: 18px; }
         }
     </style>
 </head>
@@ -397,7 +392,7 @@
             map.fitBounds(bounds, { padding: [50, 50] });
         });
 
-        // 書籤式折疊核心邏輯（同一頁面內滑動，無跳轉）
+        // 書籤式折疊核心邏輯（所有尺寸都生效）
         document.getElementById('toggleLegend').addEventListener('click', () => {
             document.getElementById('legendPanel').classList.toggle('show');
         });
