@@ -2,308 +2,152 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>台北市漢堡店家排名地圖 | T0-T6 等級</title>
+    <title>台北市漢堡店家排名地圖 | 電腦版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* 核心修復：設置 html/body 高度為 100%，避免地圖高度計算錯誤 */
         html, body { 
             height: 100%; 
             margin: 0; 
             padding: 0; 
+            font-family: "Microsoft JhengHei", sans-serif;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft JhengHei", sans-serif; }
+        * { box-sizing: border-box; }
         body { background: #1a1a1a; color: #fff; }
+
         .header { 
-            padding: 8px; /* 進一步縮小header內邊距 */
+            padding: 15px;
             text-align: center; 
             background: #2d2d2d; 
-            height: 70px; /* 降低header高度，騰出更多空間 */
-            box-sizing: border-box;
         }
-        .header h1 { font-size: 16px; margin-bottom: 2px; }
-        .header p { font-size: 10px; opacity: 0.8; }
-        /* 核心修復：地圖容器設置 min-height + z-index，確保顯示 */
+        .header h1 { font-size: 20px; margin: 0; }
+        .header p { font-size: 12px; opacity: 0.8; margin: 5px 0 0 0; }
+
         #map { 
-            height: calc(100vh - 70px); /* 匹配新的header高度 */
+            height: calc(100vh - 80px);
             width: 100%; 
-            min-height: 350px; /* 進一步降低保底高度 */
-            z-index: 1; /* 確保地圖在最底層，按鈕/面板在上方 */
+            z-index: 1;
         }
 
-        /* 新增：折疊按鈕通用樣式（進一步縮小按鈕） */
+        /* 控制按鈕 */
         .toggle-btn, .toggle-legend-btn {
             position: fixed;
-            background: transparent; /* 完全透明底色 */
+            background: #222;
             color: #fff;
-            border: 1px solid #e63946; /* 框線從2px→1px */
+            border: 2px solid #e63946;
             border-radius: 50%;
-            width: 35px; /* 按鈕直徑從40px→35px */
-            height: 35px;
+            width: 45px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            z-index: 99999;
-            box-shadow: none; /* 移除陰影 */
-            transition: all 0.2s;
-            /* 固定在底部，手機/電腦都一樣 */
-            bottom: 15px; /* 離底部更近，節省空間 */
-            font-size: 12px; /* 按鈕內圖標字體縮小 */
+            z-index: 9999;
+            bottom: 20px;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-        /* 篩選按鈕：右下角 */
-        .toggle-btn {
-            right: 15px; /* 離右邊更近 */
-        }
-        /* 圖例按鈕：左下角 */
-        .toggle-legend-btn {
-            left: 15px; /* 離左邊更近 */
-        }
-        /* 按鈕hover效果 */
+        .toggle-btn { right: 20px; }
+        .toggle-legend-btn { left: 20px; }
         .toggle-btn:hover, .toggle-legend-btn:hover {
             background: #e63946;
+        }
+
+        /* 圖例面板 */
+        .legend {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 998;
+            min-width: 240px;
+            display: block;
+        }
+        .legend h4 { margin: 0 0 10px 0; font-size: 16px; }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* 篩選面板 */
+        .filter-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 999;
+            min-width: 300px;
+            display: block;
+        }
+        .filter-title { font-weight: bold; margin-bottom: 10px; font-size: 16px; }
+        .rank-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .rank-btn {
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
             color: #fff;
-            border-color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.8;
+            transition: all 0.2s;
         }
-
-        /* 手機版：面板樣式（iPhone 12專用極致縮小版） */
-        @media (max-width: 768px) {
-            /* 篩選面板：頂部滑動欄 */
-            .filter-panel {
-                position: absolute;
-                top: 70px; /* 匹配新的header高度 */
-                left: 0;
-                right: 0;
-                bottom: auto;
-                background: rgba(0,0,0,0.9);
-                padding: 4px; /* 面板內邊距從6px→4px */
-                border-radius: 0;
-                z-index: 999;
-                overflow-x: auto;
-                overflow-y: hidden;
-                white-space: nowrap;
-                transform: translateY(-100%);
-                transition: transform 0.3s ease;
-            }
-            /* 展開狀態 */
-            .filter-panel.show {
-                transform: translateY(0);
-            }
-
-            .filter-title { font-size: 9px; margin-bottom: 2px; line-height: 1; } /* 標題從11px→9px，行高1避免多餘空間 */
-            .rank-buttons {
-                display: inline-flex;
-                gap: 2px; /* 按鈕間距從3px→2px */
-                margin-bottom: 4px; /* 外邊距從6px→4px */
-                overflow-x: auto;
-                padding-bottom: 2px; /* 內邊距從4px→2px */
-            }
-            .rank-btn {
-                padding: 3px 4px; /* 按鈕內邊距從4px6px→3px4px */
-                font-size: 9px; /* 字體從10px→9px */
-                min-width: auto;
-                white-space: nowrap;
-                border: none;
-                border-radius: 3px; /* 圓角從4px→3px */
-                color: #fff;
-                opacity: 0.8;
-                transition: all 0.2s;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
-            }
-            .rank-btn.active { opacity: 1; transform: scale(1.02); } /* 放大比例從1.05→1.02 */
-            .area-buttons {
-                display: inline-flex;
-                gap: 1px; /* 間距從2px→1px */
-                max-height: none;
-                overflow-x: auto;
-                padding-bottom: 2px; /* 內邊距從4px→2px */
-            }
-            .area-btn {
-                padding: 2px 3px; /* 按鈕內邊距從3px5px→2px3px */
-                font-size: 8px; /* 字體從9px→8px */
-                white-space: nowrap;
-                border: 1px solid #666;
-                background: #333;
-                color: #fff;
-                border-radius: 3px; /* 圓角從4px→3px */
-                transition: all 0.2s;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
-            }
-            .area-btn.active { background: #e63946; border-color: #e63946; }
-            .reset-btn {
-                position: fixed;
-                bottom: 60px; /* 離底部更近，從70px→60px */
-                left: 50%;
-                transform: translateX(-50%);
-                width: 80%; /* 寬度從85%→80% */
-                padding: 4px; /* 內邊距從6px→4px */
-                font-size: 10px; /* 字體從12px→10px */
-                z-index: 1000;
-                border: none;
-                border-radius: 3px; /* 圓角從4px→3px */
-                background: #577590;
-                color: #fff;
-                cursor: pointer;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
-            }
-            .reset-btn:hover { background: #43aa8b; }
-
-            /* 圖例：底部滑動欄 - 核心優化：圓塊和文字高度匹配 */
-            .legend {
-                position: fixed;
-                bottom: 60px; /* 離底部更近，從70px→60px */
-                left: 3px; /* 邊距從5px→3px */
-                right: 3px;
-                background: rgba(0,0,0,0.85);
-                padding: 4px; /* 內邊距從6px→4px */
-                border-radius: 6px; /* 圓角從8px→6px */
-                font-size: 8px; /* 字體從10px→8px */
-                z-index: 998;
-                max-width: none;
-                transform: translateY(200%);
-                transition: transform 0.3s ease;
-                line-height: 1; /* 整體行高1，避免多餘空間 */
-            }
-            /* 圖例展開狀態 */
-            .legend.show {
-                transform: translateY(0);
-            }
-            .legend h4 { font-size: 9px; margin-bottom: 2px; line-height: 1; } /* 標題從11px→9px，行高1 */
-            .legend-item { 
-                display: flex; 
-                align-items: center; 
-                margin: 1px 0; 
-                line-height: 1; /* 行高1，文字高度和圓塊匹配 */
-            }
-            /* 核心優化：圖例彩色圓塊 - 寬高=字體大小，和文字完全匹配 */
-            .legend-color { 
-                width: 8px; /* 和圖例字體大小一致（8px） */
-                height: 8px; /* 寬高相等，完美圓形 */
-                margin-right: 3px; /* 僅留少量間距 */
-                border-radius: 50%; 
-                flex-shrink: 0; /* 防止縮小變形 */
-            }
+        .rank-btn:hover, .rank-btn.active { opacity: 1; transform: scale(1.05); }
+        .area-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding-right: 5px;
         }
-
-        /* 桌面版：面板樣式（核心優化：圖例圓塊和文字匹配） */
-        @media (min-width: 769px) {
-            .filter-panel {
-                position: absolute;
-                bottom: 70px;
-                right: 20px;
-                background: rgba(0,0,0,0.85);
-                padding: 10px;
-                border-radius: 8px;
-                font-size: 12px;
-                z-index: 999;
-                min-width: 280px;
-                transition: all 0.3s ease;
-                transform: translateX(0);
-                opacity: 1;
-                line-height: 1; /* 行高1，避免多餘空間 */
-            }
-            .filter-panel.collapsed {
-                transform: translateX(110%);
-                opacity: 0;
-                pointer-events: none;
-            }
-
-            .filter-title { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #fff; line-height: 1; }
-            .rank-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-            .rank-btn {
-                padding: 5px 8px;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 12px;
-                color: #fff;
-                opacity: 0.8;
-                transition: all 0.2s;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
-            }
-            .rank-btn.active { opacity: 1; transform: scale(1.05); }
-            .area-buttons { 
-                display: flex; 
-                flex-wrap: wrap; 
-                gap: 4px; 
-                max-height: 120px;
-                overflow-y: auto;
-                padding-right: 5px;
-                margin-bottom: 8px;
-            }
-            .area-btn {
-                padding: 4px 6px;
-                border: 1px solid #666;
-                background: #333;
-                color: #fff;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 11px;
-                white-space: nowrap;
-                transition: all 0.2s;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
-            }
-            .area-btn.active { background: #e63946; border-color: #e63946; }
-            .reset-btn {
-                width: 100%;
-                padding: 6px;
-                border: none;
-                border-radius: 4px;
-                background: #577590;
-                color: #fff;
-                cursor: pointer;
-                font-size: 12px;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
-            }
-            .reset-btn:hover { background: #43aa8b; }
-
-            /* 圖例：核心優化 - 圓塊寬高=字體大小，和文字匹配 */
-            .legend {
-                position: absolute;
-                bottom: 70px;
-                left: 20px;
-                background: rgba(0,0,0,0.85);
-                padding: 10px;
-                border-radius: 8px;
-                font-size: 12px;
-                z-index: 998;
-                min-width: 220px;
-                transition: all 0.3s ease;
-                transform: translateX(0);
-                opacity: 1;
-                line-height: 1; /* 行高1，避免多餘空間 */
-            }
-            .legend.collapsed {
-                transform: translateX(-110%);
-                opacity: 0;
-                pointer-events: none;
-            }
-            
-            .legend h4 { margin-bottom: 8px; font-size: 14px; line-height: 1; }
-            .legend-item { 
-                display: flex; 
-                align-items: center; 
-                margin: 4px 0; 
-                line-height: 1; /* 行高1，文字高度和圓塊匹配 */
-            }
-            /* 核心優化：桌面版圖例圓塊 - 寬高=字體大小（12px） */
-            .legend-color { 
-                width: 12px; /* 和桌面版圖例字體大小一致（12px） */
-                height: 12px; /* 寬高相等，完美圓形 */
-                margin-right: 6px; 
-                border-radius: 50%; 
-                flex-shrink: 0; /* 防止縮小變形 */
-            }
+        .area-btn {
+            padding: 6px 8px;
+            border: 1px solid #666;
+            background: #333;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
         }
+        .area-btn:hover, .area-btn.active { background: #e63946; border-color: #e63946; }
+        .reset-btn {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            background: #577590;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .reset-btn:hover { background: #43aa8b; }
 
-        /* 弹窗样式优化（同步縮小+行高1） */
-        .leaflet-popup-content { color: #333; width: 180px !important; line-height: 1; } /* 彈窗寬度從200px→180px，行高1 */
-        .popup-title { font-weight: bold; font-size: 14px; margin-bottom: 4px; color: #e63946; line-height: 1; } /* 標題從16px→14px，行高1 */
-        .popup-info { font-size: 12px; margin: 2px 0; line-height: 1; } /* 內容從14px→12px，行高1 */
+        /* 彈窗樣式 */
+        .leaflet-popup-content { color: #333; width: 220px !important; }
+        .popup-title { font-weight: bold; font-size: 16px; margin-bottom: 6px; color: #e63946; }
+        .popup-info { font-size: 14px; margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -313,12 +157,9 @@
     </div>
     <div id="map"></div>
 
-    <!-- 篩選按鈕：右下角 -->
     <button class="toggle-btn" id="toggleFilterBtn">≡</button>
-    <!-- 圖例按鈕：左下角 -->
     <button class="toggle-legend-btn" id="toggleLegendBtn">ℹ️</button>
 
-    <!-- 圖例：左下角，不與篩選面板重疊 -->
     <div class="legend" id="legendPanel">
         <h4>好吃等級 (常見連鎖店)</h4>
         <div class="legend-item"><div class="legend-color" style="background: #e63946;"></div>T0 (Shake Shack)</div>
@@ -330,9 +171,8 @@
         <div class="legend-item"><div class="legend-color" style="background: #277da1;"></div>T6 (摩斯漢堡)</div>
     </div>
 
-    <!-- 篩選面板：右下角 -->
     <div class="filter-panel" id="filterPanel">
-        <div class="filter-title">好吃等級 (常見連鎖店)</div>
+        <div class="filter-title">好吃等級</div>
         <div class="rank-buttons">
             <button class="rank-btn" style="background: #e63946;" data-rank="T0">T0 (Shake Shack)</button>
             <button class="rank-btn" style="background: #f77f00;" data-rank="T1">T1 (Five Guys)</button>
@@ -342,8 +182,7 @@
             <button class="rank-btn" style="background: #577590;" data-rank="T5">T5 (麥當勞)</button>
             <button class="rank-btn" style="background: #277da1;" data-rank="T6">T6 (摩斯漢堡)</button>
         </div>
-
-        <div class="filter-title">台北市行政區</div>
+        <div class="filter-title">行政區</div>
         <div class="area-buttons">
             <button class="area-btn" data-area="信義區">信義區</button>
             <button class="area-btn" data-area="大安區">大安區</button>
@@ -358,144 +197,92 @@
             <button class="area-btn" data-area="大同區">大同區</button>
             <button class="area-btn" data-area="文山區">文山區</button>
         </div>
-
         <button class="reset-btn" id="resetFilter">重置篩選</button>
     </div>
 
-    <script src="./data.js"></script>
     <script>
         // 初始化地圖
-        const map = L.map('map').setView([25.0478, 121.5319], 12);
+        const map = L.map('map').setView([25.0478, 121.5319], 13);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
             maxZoom: 18
         }).addTo(map);
 
-        // 等級顏色映射（僅 T0-T6）
+        // 等級顏色映射
         const rankColorMap = {
             T0: '#e63946', T1: '#f77f00', T2: '#fcbf49',
             T3: '#e9f542', T4: '#43aa8b', T5: '#577590', T6: '#277da1'
         };
 
-        // 等級中文標語映射
-        const rankLabelMap = {
-            T0: 'T0 (敲級好吃)',
-            T1: 'T1 (滿好吃的)',
-            T2: 'T2 (普通好吃)',
-            T3: 'T3 (雞肋勘吃)',
-            T4: 'T4 (將就果腹)',
-            T5: 'T5 (難以吞嚥)',
-            T6: 'T6 (犬不爭食)'
-        };
+        // 測試數據（如果有data.js可替換）
+        const testData = [
+            { name: 'Shake Shack (信義區)', rank: 'T0', area: '信義區', lat: 25.0375, lng: 121.5646, meat: '安格斯牛肉', price: 'NT$180-' },
+            { name: 'Five Guys (大安區)', rank: 'T1', area: '大安區', lat: 25.0458, lng: 121.5219, meat: '牛肉', price: 'NT$220-' },
+            { name: '漢堡王 (中山區)', rank: 'T4', area: '中山區', lat: 25.0602, lng: 121.5139, meat: '牛肉', price: 'NT$99-' },
+            { name: '麥當勞 (西門町)', rank: 'T5', area: '萬華區', lat: 25.0471, lng: 121.5039, meat: '牛肉', price: 'NT$79-' },
+            { name: '摩斯漢堡 (士林)', rank: 'T6', area: '士林區', lat: 25.0878, lng: 121.5136, meat: '雞肉', price: 'NT$89-' }
+        ];
 
-        // 全域變數
+        // 添加地圖標記
         let allMarkers = [];
-        let currentRank = null;
-        let currentArea = null;
-
-        // 初始化所有店家標記
-        function initMarkers() {
-            if (!burgerData || burgerData.length === 0) {
-                // 沒有data.js時，添加默認測試點
-                const testData = [
-                    { name: 'Shake Shack (信義區)', rank: 'T0', area: '信義區', lat: 25.0375, lng: 121.5646, meat: '安格斯牛肉', price: 'NT$180-' },
-                    { name: 'Five Guys (大安區)', rank: 'T1', area: '大安區', lat: 25.0458, lng: 121.5219, meat: '牛肉', price: 'NT$220-' },
-                    { name: '漢堡王 (中山區)', rank: 'T4', area: '中山區', lat: 25.0602, lng: 121.5139, meat: '牛肉', price: 'NT$99-' }
-                ];
-                testData.forEach(shop => {
-                    const marker = L.circleMarker([shop.lat, shop.lng], {
-                        radius: 7, // 標記點從9px→7px，更小
-                        fillColor: rankColorMap[shop.rank] || '#6c757d',
-                        color: "#fff",
-                        weight: 1,
-                        fillOpacity: 0.9
-                    });
-                    const currentRankLabel = rankLabelMap[shop.rank] || shop.rank;
-                    marker.bindTooltip(`${currentRankLabel} - ${shop.name}`, { permanent: false, direction: 'top', fontSize: '10px' }); // 提示字體縮小
-                    marker.bindPopup(`
-                        <div class="popup-title">${shop.name}</div>
-                        <div class="popup-info">好吃等級：${currentRankLabel}</div>
-                        <div class="popup-info">地區：${shop.area || '台北市'}</div>
-                        <div class="popup-info">肉品：${shop.meat || '未標註'}</div>
-                        <div class="popup-info">價格：${shop.price || '未標註'}</div>
-                    `);
-                    marker.shopData = shop;
-                    allMarkers.push(marker);
-                    marker.addTo(map);
-                });
-                const bounds = L.latLngBounds(allMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
-                map.fitBounds(bounds, { padding: [40, 40] }); // 內邊距從50→40
-                return;
-            }
-            
+        function addMarkers(data) {
+            // 清空舊標記
+            allMarkers.forEach(marker => map.removeLayer(marker));
             allMarkers = [];
-            burgerData.forEach(shop => {
-                const lat = shop.lat || 25.0478;
-                const lng = shop.lng || 121.5319;
-                
-                const marker = L.circleMarker([lat, lng], {
-                    radius: 7, // 標記點從9px→7px
+
+            // 添加新標記
+            data.forEach(shop => {
+                const marker = L.circleMarker([shop.lat, shop.lng], {
+                    radius: 9,
                     fillColor: rankColorMap[shop.rank] || '#6c757d',
                     color: "#fff",
                     weight: 1,
                     fillOpacity: 0.9
-                });
+                }).addTo(map);
 
-                // 綁定提示和彈窗（顯示中文標語）
-                const currentRankLabel = rankLabelMap[shop.rank] || shop.rank;
-                marker.bindTooltip(`${currentRankLabel} - ${shop.name}`, { permanent: false, direction: 'top', fontSize: '10px' });
+                // 彈窗內容
                 marker.bindPopup(`
                     <div class="popup-title">${shop.name}</div>
-                    <div class="popup-info">好吃等級：${currentRankLabel}</div>
-                    <div class="popup-info">地區：${shop.area || '台北市'}</div>
-                    <div class="popup-info">肉品：${shop.meat || '未標註'}</div>
-                    <div class="popup-info">價格：${shop.price || '未標註'}</div>
+                    <div class="popup-info">好吃等級：${shop.rank}</div>
+                    <div class="popup-info">地區：${shop.area}</div>
+                    <div class="popup-info">肉品：${shop.meat}</div>
+                    <div class="popup-info">價格：${shop.price}</div>
                 `);
 
-                marker.shopData = shop;
                 allMarkers.push(marker);
-                marker.addTo(map);
             });
-
-            // 自動適配地圖視野
-            const bounds = L.latLngBounds(allMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
-            map.fitBounds(bounds, { padding: [40, 40] }); // 內邊距從50→40
         }
 
-        // 篩選標記：同時考慮等級和行政區
-        function filterMarkers() {
-            allMarkers.forEach(marker => {
-                const shop = marker.shopData;
-                const rankMatch = !currentRank || shop.rank === currentRank;
-                const areaMatch = !currentArea || 
-                    (shop.area || '').includes(currentArea.replace('區', '')) ||
-                    (currentArea === '大安區' && (shop.area || '') === '東區');
-                
-                if (rankMatch && areaMatch) {
-                    marker.addTo(map);
-                } else {
-                    map.removeLayer(marker);
-                }
-            });
+        // 初始化標記
+        addMarkers(testData);
 
-            const visibleMarkers = allMarkers.filter(m => map.hasLayer(m));
-            if (visibleMarkers.length > 0) {
-                const bounds = L.latLngBounds(visibleMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
-                map.fitBounds(bounds, { padding: [40, 40] });
-            } else {
-                map.setView([25.0478, 121.5319], 12);
-                alert(`未找到【${currentRank || '所有等級'}】+【${currentArea || '所有行政區'}】的店家！`);
-            }
-        }
+        // 面板顯示/隱藏切換
+        const filterBtn = document.getElementById('toggleFilterBtn');
+        const legendBtn = document.getElementById('toggleLegendBtn');
+        const filterPanel = document.getElementById('filterPanel');
+        const legendPanel = document.getElementById('legendPanel');
 
-        // 綁定等級按鈕事件
+        filterBtn.addEventListener('click', () => {
+            filterPanel.style.display = filterPanel.style.display === 'none' ? 'block' : 'none';
+        });
+        legendBtn.addEventListener('click', () => {
+            legendPanel.style.display = legendPanel.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // 篩選功能
+        let currentRank = null;
+        let currentArea = null;
+
+        // 等級篩選
         document.querySelectorAll('.rank-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                // 取消其他按鈕激活狀態
+                document.querySelectorAll('.rank-btn').forEach(b => b.classList.remove('active'));
+                // 切換當前按鈕狀態
                 if (currentRank === btn.dataset.rank) {
                     currentRank = null;
                     btn.classList.remove('active');
                 } else {
-                    document.querySelectorAll('.rank-btn').forEach(b => b.classList.remove('active'));
                     currentRank = btn.dataset.rank;
                     btn.classList.add('active');
                 }
@@ -503,14 +290,16 @@
             });
         });
 
-        // 綁定行政區按鈕事件
+        // 行政區篩選
         document.querySelectorAll('.area-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                // 取消其他按鈕激活狀態
+                document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
+                // 切換當前按鈕狀態
                 if (currentArea === btn.dataset.area) {
                     currentArea = null;
                     btn.classList.remove('active');
                 } else {
-                    document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('active'));
                     currentArea = btn.dataset.area;
                     btn.classList.add('active');
                 }
@@ -518,38 +307,23 @@
             });
         });
 
-        // 重置篩選按鈕
+        // 重置篩選
         document.getElementById('resetFilter').addEventListener('click', () => {
             currentRank = null;
             currentArea = null;
             document.querySelectorAll('.rank-btn, .area-btn').forEach(btn => btn.classList.remove('active'));
-            allMarkers.forEach(marker => marker.addTo(map));
-            const bounds = L.latLngBounds(allMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
-            map.fitBounds(bounds, { padding: [40, 40] });
+            addMarkers(testData); // 還原所有標記
         });
 
-        // 折疊邏輯 - 兼容電腦+手機版
-        document.getElementById('toggleFilterBtn').addEventListener('click', () => {
-            const filterPanel = document.getElementById('filterPanel');
-            if (window.innerWidth >= 769) {
-                filterPanel.classList.toggle('collapsed');
-            } else {
-                filterPanel.classList.toggle('show');
-            }
-        });
-
-        // 圖例折疊邏輯 - 兼容電腦+手機版
-        document.getElementById('toggleLegendBtn').addEventListener('click', () => {
-            const legendPanel = document.getElementById('legendPanel');
-            if (window.innerWidth >= 769) {
-                legendPanel.classList.toggle('collapsed');
-            } else {
-                legendPanel.classList.toggle('show');
-            }
-        });
-
-        // 初始化執行
-        initMarkers();
+        // 篩選標記邏輯
+        function filterMarkers() {
+            const filteredData = testData.filter(shop => {
+                const rankMatch = currentRank ? shop.rank === currentRank : true;
+                const areaMatch = currentArea ? shop.area === currentArea : true;
+                return rankMatch && areaMatch;
+            });
+            addMarkers(filteredData);
+        }
     </script>
 </body>
 </html>
