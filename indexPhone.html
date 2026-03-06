@@ -91,7 +91,7 @@
                 transform: translateY(0);
             }
 
-            .filter-title { font-size: 9px; margin-bottom: 2px; line-height: 1; } /* 標題從11px→9px，行高1避免多餘空間 */
+            .filter-title { font-size: 9px; margin-bottom: 2px; } /* 標題從11px→9px */
             .rank-buttons {
                 display: inline-flex;
                 gap: 2px; /* 按鈕間距從3px→2px */
@@ -109,7 +109,6 @@
                 color: #fff;
                 opacity: 0.8;
                 transition: all 0.2s;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
             }
             .rank-btn.active { opacity: 1; transform: scale(1.02); } /* 放大比例從1.05→1.02 */
             .area-buttons {
@@ -128,7 +127,6 @@
                 color: #fff;
                 border-radius: 3px; /* 圓角從4px→3px */
                 transition: all 0.2s;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
             }
             .area-btn.active { background: #e63946; border-color: #e63946; }
             .reset-btn {
@@ -145,11 +143,10 @@
                 background: #577590;
                 color: #fff;
                 cursor: pointer;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
             }
             .reset-btn:hover { background: #43aa8b; }
 
-            /* 圖例：底部滑動欄 - 核心優化：圓塊和文字高度匹配 */
+            /* 圖例：底部滑動欄 */
             .legend {
                 position: fixed;
                 bottom: 60px; /* 離底部更近，從70px→60px */
@@ -163,30 +160,17 @@
                 max-width: none;
                 transform: translateY(200%);
                 transition: transform 0.3s ease;
-                line-height: 1; /* 整體行高1，避免多餘空間 */
             }
             /* 圖例展開狀態 */
             .legend.show {
                 transform: translateY(0);
             }
-            .legend h4 { font-size: 9px; margin-bottom: 2px; line-height: 1; } /* 標題從11px→9px，行高1 */
-            .legend-item { 
-                display: flex; 
-                align-items: center; 
-                margin: 1px 0; 
-                line-height: 1; /* 行高1，文字高度和圓塊匹配 */
-            }
-            /* 核心優化：圖例彩色圓塊 - 寬高=字體大小，和文字完全匹配 */
-            .legend-color { 
-                width: 8px; /* 和圖例字體大小一致（8px） */
-                height: 8px; /* 寬高相等，完美圓形 */
-                margin-right: 3px; /* 僅留少量間距 */
-                border-radius: 50%; 
-                flex-shrink: 0; /* 防止縮小變形 */
-            }
+            .legend h4 { font-size: 9px; margin-bottom: 2px; } /* 標題從11px→9px */
+            .legend-item { display: flex; align-items: center; margin: 1px 0; } /* 間距從2px→1px */
+            .legend-color { width: 8px; height: 8px; margin-right: 3px; border-radius: 50%; } /* 顏色塊從10px→8px */
         }
 
-        /* 桌面版：面板樣式（核心優化：圖例圓塊和文字匹配） */
+        /* 桌面版：面板樣式（不影響電腦端） */
         @media (min-width: 769px) {
             .filter-panel {
                 position: absolute;
@@ -201,7 +185,6 @@
                 transition: all 0.3s ease;
                 transform: translateX(0);
                 opacity: 1;
-                line-height: 1; /* 行高1，避免多餘空間 */
             }
             .filter-panel.collapsed {
                 transform: translateX(110%);
@@ -209,7 +192,7 @@
                 pointer-events: none;
             }
 
-            .filter-title { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #fff; line-height: 1; }
+            .filter-title { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #fff; }
             .rank-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
             .rank-btn {
                 padding: 5px 8px;
@@ -223,7 +206,6 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
             }
             .rank-btn.active { opacity: 1; transform: scale(1.05); }
             .area-buttons { 
@@ -245,7 +227,6 @@
                 font-size: 11px;
                 white-space: nowrap;
                 transition: all 0.2s;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
             }
             .area-btn.active { background: #e63946; border-color: #e63946; }
             .reset-btn {
@@ -257,11 +238,9 @@
                 color: #fff;
                 cursor: pointer;
                 font-size: 12px;
-                line-height: 1; /* 行高1，按鈕高度和字體匹配 */
             }
             .reset-btn:hover { background: #43aa8b; }
 
-            /* 圖例：核心優化 - 圓塊寬高=字體大小，和文字匹配 */
             .legend {
                 position: absolute;
                 bottom: 70px;
@@ -275,7 +254,6 @@
                 transition: all 0.3s ease;
                 transform: translateX(0);
                 opacity: 1;
-                line-height: 1; /* 行高1，避免多餘空間 */
             }
             .legend.collapsed {
                 transform: translateX(-110%);
@@ -283,27 +261,15 @@
                 pointer-events: none;
             }
             
-            .legend h4 { margin-bottom: 8px; font-size: 14px; line-height: 1; }
-            .legend-item { 
-                display: flex; 
-                align-items: center; 
-                margin: 4px 0; 
-                line-height: 1; /* 行高1，文字高度和圓塊匹配 */
-            }
-            /* 核心優化：桌面版圖例圓塊 - 寬高=字體大小（12px） */
-            .legend-color { 
-                width: 12px; /* 和桌面版圖例字體大小一致（12px） */
-                height: 12px; /* 寬高相等，完美圓形 */
-                margin-right: 6px; 
-                border-radius: 50%; 
-                flex-shrink: 0; /* 防止縮小變形 */
-            }
+            .legend h4 { margin-bottom: 8px; font-size: 14px; }
+            .legend-item { display: flex; align-items: center; margin: 4px 0; }
+            .legend-color { width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; }
         }
 
-        /* 弹窗样式优化（同步縮小+行高1） */
-        .leaflet-popup-content { color: #333; width: 180px !important; line-height: 1; } /* 彈窗寬度從200px→180px，行高1 */
-        .popup-title { font-weight: bold; font-size: 14px; margin-bottom: 4px; color: #e63946; line-height: 1; } /* 標題從16px→14px，行高1 */
-        .popup-info { font-size: 12px; margin: 2px 0; line-height: 1; } /* 內容從14px→12px，行高1 */
+        /* 弹窗样式优化（同步縮小） */
+        .leaflet-popup-content { color: #333; width: 180px !important; } /* 彈窗寬度從200px→180px */
+        .popup-title { font-weight: bold; font-size: 14px; margin-bottom: 4px; color: #e63946; } /* 標題從16px→14px */
+        .popup-info { font-size: 12px; margin: 2px 0; } /* 內容從14px→12px */
     </style>
 </head>
 <body>
