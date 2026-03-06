@@ -66,7 +66,7 @@
             border-color: #fff;
         }
 
-        /* 手機版：面板樣式（僅調整面板位置，按鈕位置已在通用樣式定義） */
+        /* 手機版：面板樣式（小螢幕專用優化版） */
         @media (max-width: 768px) {
             /* 篩選面板：頂部滑動欄 */
             .filter-panel {
@@ -76,31 +76,31 @@
                 right: 0;
                 bottom: auto;
                 background: rgba(0,0,0,0.9);
-                padding: 8px;
+                padding: 6px;
                 border-radius: 0;
                 z-index: 999;
                 overflow-x: auto;
                 overflow-y: hidden;
                 white-space: nowrap;
-                transform: translateY(-100%); /* 預設隱藏在頂部 */
-                transition: transform 0.3s ease; /* 滑動動畫 */
+                transform: translateY(-100%);
+                transition: transform 0.3s ease;
             }
             /* 展開狀態 */
             .filter-panel.show {
-                transform: translateY(0); /* 滑入螢幕 */
+                transform: translateY(0);
             }
 
-            .filter-title { font-size: 12px; margin-bottom: 6px; }
+            .filter-title { font-size: 11px; margin-bottom: 4px; }
             .rank-buttons {
                 display: inline-flex;
-                gap: 4px;
-                margin-bottom: 8px;
+                gap: 3px;
+                margin-bottom: 6px;
                 overflow-x: auto;
                 padding-bottom: 4px;
             }
             .rank-btn {
-                padding: 6px 8px;
-                font-size: 11px;
+                padding: 4px 6px;
+                font-size: 10px;
                 min-width: auto;
                 white-space: nowrap;
                 border: none;
@@ -112,14 +112,14 @@
             .rank-btn.active { opacity: 1; transform: scale(1.05); }
             .area-buttons {
                 display: inline-flex;
-                gap: 3px;
+                gap: 2px;
                 max-height: none;
                 overflow-x: auto;
                 padding-bottom: 4px;
             }
             .area-btn {
-                padding: 4px 6px;
-                font-size: 10px;
+                padding: 3px 5px;
+                font-size: 9px;
                 white-space: nowrap;
                 border: 1px solid #666;
                 background: #333;
@@ -130,12 +130,12 @@
             .area-btn.active { background: #e63946; border-color: #e63946; }
             .reset-btn {
                 position: fixed;
-                bottom: 70px; /* 避開按鈕，往上移一點 */
+                bottom: 70px;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 90%;
-                padding: 8px;
-                font-size: 14px;
+                width: 85%;
+                padding: 6px;
+                font-size: 12px;
                 z-index: 1000;
                 border: none;
                 border-radius: 4px;
@@ -148,25 +148,25 @@
             /* 圖例：底部滑動欄 */
             .legend {
                 position: fixed;
-                bottom: 70px; /* 避開按鈕，往上移一點 */
-                left: 10px;
-                right: 10px;
+                bottom: 70px;
+                left: 5px;
+                right: 5px;
                 background: rgba(0,0,0,0.85);
-                padding: 8px;
+                padding: 6px;
                 border-radius: 8px;
-                font-size: 11px;
+                font-size: 10px;
                 z-index: 998;
                 max-width: none;
-                transform: translateY(200%); /* 預設隱藏在底部 */
-                transition: transform 0.3s ease; /* 滑動動畫 */
+                transform: translateY(200%);
+                transition: transform 0.3s ease;
             }
             /* 圖例展開狀態 */
             .legend.show {
-                transform: translateY(0); /* 滑入螢幕 */
+                transform: translateY(0);
             }
-            .legend h4 { font-size: 12px; margin-bottom: 6px; }
-            .legend-item { display: flex; align-items: center; margin: 3px 0; }
-            .legend-color { width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; }
+            .legend h4 { font-size: 11px; margin-bottom: 4px; }
+            .legend-item { display: flex; align-items: center; margin: 2px 0; }
+            .legend-color { width: 10px; height: 10px; margin-right: 5px; border-radius: 50%; }
         }
 
         /* 桌面版：面板樣式（僅調整面板位置，按鈕位置已在通用樣式定義） */
@@ -286,7 +286,7 @@
     <button class="toggle-btn" id="toggleFilterBtn">≡</button>
     <!-- 圖例按鈕：左下角 -->
     <button class="toggle-legend-btn" id="toggleLegendBtn">ℹ️</button>
-ㄊㄜ
+
     <!-- 圖例：左下角，不與篩選面板重疊 -->
     <div class="legend" id="legendPanel">
         <h4>好吃等級 (常見連鎖店)</h4>
@@ -364,7 +364,38 @@
 
         // 初始化所有店家標記
         function initMarkers() {
-            if (!burgerData || burgerData.length === 0) return;
+            if (!burgerData || burgerData.length === 0) {
+                // 沒有data.js時，添加默認測試點，確保小螢幕也能看到內容
+                const testData = [
+                    { name: 'Shake Shack (信義區)', rank: 'T0', area: '信義區', lat: 25.0375, lng: 121.5646, meat: '安格斯牛肉', price: 'NT$180-' },
+                    { name: 'Five Guys (大安區)', rank: 'T1', area: '大安區', lat: 25.0458, lng: 121.5219, meat: '牛肉', price: 'NT$220-' },
+                    { name: '漢堡王 (中山區)', rank: 'T4', area: '中山區', lat: 25.0602, lng: 121.5139, meat: '牛肉', price: 'NT$99-' }
+                ];
+                testData.forEach(shop => {
+                    const marker = L.circleMarker([shop.lat, shop.lng], {
+                        radius: 9,
+                        fillColor: rankColorMap[shop.rank] || '#6c757d',
+                        color: "#fff",
+                        weight: 1,
+                        fillOpacity: 0.9
+                    });
+                    const currentRankLabel = rankLabelMap[shop.rank] || shop.rank;
+                    marker.bindTooltip(`${currentRankLabel} - ${shop.name}`, { permanent: false, direction: 'top' });
+                    marker.bindPopup(`
+                        <div class="popup-title">${shop.name}</div>
+                        <div class="popup-info">好吃等級：${currentRankLabel}</div>
+                        <div class="popup-info">地區：${shop.area || '台北市'}</div>
+                        <div class="popup-info">肉品：${shop.meat || '未標註'}</div>
+                        <div class="popup-info">價格：${shop.price || '未標註'}</div>
+                    `);
+                    marker.shopData = shop;
+                    allMarkers.push(marker);
+                    marker.addTo(map);
+                });
+                const bounds = L.latLngBounds(allMarkers.map(m => [m._latlng.lat, m._latlng.lng]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+                return;
+            }
             
             allMarkers = [];
             burgerData.forEach(shop => {
