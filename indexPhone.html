@@ -494,25 +494,68 @@
             map.fitBounds(bounds, { padding: [40, 40] });
         });
 
-        // 折疊邏輯 - 兼容電腦+手機版
+        // ========== 核心修改：手機/電腦端都實現互斥切換 ==========
+        // 獲取面板元素
+        const filterPanel = document.getElementById('filterPanel');
+        const legendPanel = document.getElementById('legendPanel');
+
+        // 通用函數：隱藏另一個面板
+        function hideOtherPanel(activePanel) {
+            const isMobile = window.innerWidth < 769;
+            
+            if (activePanel === 'filter') {
+                // 隱藏圖例面板
+                if (isMobile) {
+                    legendPanel.classList.remove('show');
+                } else {
+                    legendPanel.classList.add('collapsed');
+                }
+            } else if (activePanel === 'legend') {
+                // 隱藏篩選面板
+                if (isMobile) {
+                    filterPanel.classList.remove('show');
+                } else {
+                    filterPanel.classList.add('collapsed');
+                }
+            }
+        }
+
+        // 篩選按鈕點擊事件（互斥邏輯）
         document.getElementById('toggleFilterBtn').addEventListener('click', () => {
-            const filterPanel = document.getElementById('filterPanel');
-            if (window.innerWidth >= 769) {
-                filterPanel.classList.toggle('collapsed');
+            const isMobile = window.innerWidth < 769;
+            let isFilterActive = false;
+
+            if (isMobile) {
+                isFilterActive = filterPanel.classList.toggle('show');
             } else {
-                filterPanel.classList.toggle('show');
+                isFilterActive = !filterPanel.classList.contains('collapsed');
+                filterPanel.classList.toggle('collapsed');
+            }
+
+            // 如果篩選面板要顯示，則隱藏圖例面板
+            if (isFilterActive) {
+                hideOtherPanel('filter');
             }
         });
 
-        // 圖例折疊邏輯 - 兼容電腦+手機版
+        // 圖例按鈕點擊事件（互斥邏輯）
         document.getElementById('toggleLegendBtn').addEventListener('click', () => {
-            const legendPanel = document.getElementById('legendPanel');
-            if (window.innerWidth >= 769) {
-                legendPanel.classList.toggle('collapsed');
+            const isMobile = window.innerWidth < 769;
+            let isLegendActive = false;
+
+            if (isMobile) {
+                isLegendActive = legendPanel.classList.toggle('show');
             } else {
-                legendPanel.classList.toggle('show');
+                isLegendActive = !legendPanel.classList.contains('collapsed');
+                legendPanel.classList.toggle('collapsed');
+            }
+
+            // 如果圖例面板要顯示，則隱藏篩選面板
+            if (isLegendActive) {
+                hideOtherPanel('legend');
             }
         });
+        // ===============================================
 
         // 初始化執行
         initMarkers();

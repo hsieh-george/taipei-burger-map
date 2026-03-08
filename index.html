@@ -193,7 +193,7 @@
     <div id="map"></div>
 
     <!-- 左下角書籤按鈕（控制圖例） -->
-    <button class="toggle-btn toggle-legend" id="toggleLegend">ℹ️</button>
+    <button class="toggle-btn toggle-legend" id="toggleLegend">≡</button>
     <!-- 圖例面板（書籤式） -->
     <div class="legend" id="legendPanel">
         <h4>評級 </h4>
@@ -392,13 +392,34 @@
             map.fitBounds(bounds, { padding: [50, 50] });
         });
 
-        // 書籤式折疊核心邏輯（所有尺寸都生效）
+        // ========== 核心修改：互斥切換面板 ==========
+        // 獲取面板元素
+        const legendPanel = document.getElementById('legendPanel');
+        const filterPanel = document.getElementById('filterPanel');
+
+        // 圖例按鈕點擊事件（互斥邏輯）
         document.getElementById('toggleLegend').addEventListener('click', () => {
-            document.getElementById('legendPanel').classList.toggle('show');
+            // 切換圖例面板狀態
+            const isLegendShow = legendPanel.classList.toggle('show');
+            
+            // 如果圖例面板顯示，則隱藏篩選面板
+            if (isLegendShow) {
+                filterPanel.classList.remove('show');
+            }
         });
+
+        // 篩選按鈕點擊事件（互斥邏輯）
         document.getElementById('toggleFilter').addEventListener('click', () => {
-            document.getElementById('filterPanel').classList.toggle('show');
+            // 切換篩選面板狀態
+            const isFilterShow = filterPanel.classList.toggle('show');
+            
+            // 如果篩選面板顯示，則隱藏圖例面板
+            if (isFilterShow) {
+                legendPanel.classList.remove('show');
+            }
         });
+
+        // ==========================================
 
         // 修復地圖渲染（延遲刷新尺寸）
         setTimeout(() => {
