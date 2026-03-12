@@ -20,6 +20,14 @@ except:
 
 plt.rcParams['axes.unicode_minus'] = False  # 解決負號顯示問題
 
+# ==================== 設置暗黑模式樣式 ====================
+plt.style.use('dark_background')  # 開啟暗黑模式
+# 自定義顏色配置
+TEXT_COLOR = 'white'          # 文字顏色
+GRID_COLOR = '#444444'        # 網格線顏色
+AXIS_LINE_COLOR = '#666666'   # 軸線顏色
+TICK_COLOR = '#888888'        # 刻度顏色
+
 # ---------------------- 原始數據 ----------------------
 data = {
     'T0': [
@@ -93,7 +101,7 @@ price_intervals = {
     1000:  (800, 1200)
 }
 
-# 匹配你提供圖例的顏色
+# 匹配你提供圖例的顏色（調整透明度讓暗黑模式更協調）
 level_colors = {
     'T0': '#E04040',  # 敲級好吃（紅）
     'T1': '#F29339',  # 滿好吃的（橙）
@@ -160,6 +168,7 @@ for level, shops in data.items():
 # ---------------------- 繪圖 ----------------------
 # 調整圖表尺寸（稍微加大高度，確保文字不被裁切）
 fig, ax = plt.subplots(figsize=(18, 14))  # 高度從12改為14
+fig.patch.set_facecolor('black')  # 設置圖表整體背景為黑色
 
 # 背景色塊（經過 x 轉換）
 def rect_x(x):
@@ -188,25 +197,25 @@ ax.add_patch(patches.Rectangle((rect_x(0), 0), rect_x(1200)-rect_x(0), 1.0,
 ax.add_patch(patches.Rectangle((rect_x(0), -1.0), rect_x(1200)-rect_x(0), 1.0, 
                                fc=level_colors['T6'], alpha=0.2, zorder=0))
 
-# 2. 繪製價格區間的淺色背景（疊加在T級背景上）
-price_ranges = [
-    (0,200,'#FFEBEE'), (200,400,'#FFF8E1'),
-    (400,600,'#E8F5E8'), (600,1000,'#E1F5FE'), (800,1200,'#F3E5F5')
+# 2. 繪製價格區間的淺色背景（疊加在T級背景上，調整顏色適配暗黑模式）
+price_ranges_dark = [
+    (0,200,'#331111'), (200,400,'#332211'),
+    (400,600,'#112211'), (600,1000,'#111122'), (800,1200,'#221122')
 ]
-for x1, x2, c in price_ranges:
+for x1, x2, c in price_ranges_dark:
     ax.add_patch(patches.Rectangle((rect_x(x1), -1.0), rect_x(x2)-rect_x(x1), 7.0, 
                                    fc=c, alpha=0.1, zorder=1))
 
-# T 等級線
+# T 等級線（調整顏色適配暗黑模式）
 for t in [0,1,2,3,4,5,6]:
-    ax.axhline(t, c='#ccc', lw=2, zorder=2)
+    ax.axhline(t, c='#555555', lw=2, zorder=2)
 
-# 畫點 - 改為實心黑色
+# 畫點 - 改為白色（暗黑模式下更醒目）
 point_size = 80
 for level, shops in final_data.items():
     for name, x, y in shops:
-        ax.scatter(x, y, c='black', s=point_size, alpha=1.0, lw=0, zorder=3)
-        ax.text(x+5, y-0.06, name, fontsize=6.5, ha='center', va='top', zorder=4)
+        ax.scatter(x, y, c='white', s=point_size, alpha=1.0, lw=0, zorder=3)
+        ax.text(x+5, y-0.06, name, fontsize=6.5, ha='center', va='top', zorder=4, color='white')
 
 # 軸設定 - 只保留 0,200,400,600,800,1000,1200 標註
 ax.set_xlim(rect_x(0), rect_x(1200))
@@ -215,24 +224,32 @@ transformed_ticks = [rect_x(t) for t in raw_ticks]
 tick_labels = [str(t) for t in raw_ticks]
 
 ax.set_xticks(transformed_ticks)
-ax.set_xticklabels(tick_labels)
+ax.set_xticklabels(tick_labels, color=TICK_COLOR)
 
-ax.set_xlabel('價格（新台幣）', fontsize=14, fontweight='bold')
+# 設置軸標籤（白色文字）
+ax.set_xlabel('價格（新台幣）', fontsize=14, fontweight='bold', color=TEXT_COLOR)
 ax.set_ylim(-1.5, 6.5)  # 擴大Y軸範圍，避免邊緣文字被切
 ax.set_yticks([0,1,2,3,4,5,6])
-ax.set_yticklabels(['T6','T5','T4','T3','T2','T1','T0'])
-ax.set_ylabel('好吃程度', fontsize=14, fontweight='bold')
+ax.set_yticklabels(['T6','T5','T4','T3','T2','T1','T0'], color=TICK_COLOR)
+ax.set_ylabel('好吃程度', fontsize=14, fontweight='bold', color=TEXT_COLOR)
 
-ax.set_title('台北漢堡指南：價格 × 好吃程度分布圖', fontsize=18, fontweight='bold', pad=20)  # pad增加標題與圖表距離
-ax.grid(alpha=0.3, zorder=2)
+# 設置標題（白色文字）
+ax.set_title('台北漢堡指南：價格 × 好吃程度分布圖', fontsize=18, fontweight='bold', pad=20, color=TEXT_COLOR)
+
+# 設置網格和軸線樣式
+ax.grid(alpha=0.3, zorder=2, color=GRID_COLOR)
+ax.spines['top'].set_color(AXIS_LINE_COLOR)
+ax.spines['bottom'].set_color(AXIS_LINE_COLOR)
+ax.spines['left'].set_color(AXIS_LINE_COLOR)
+ax.spines['right'].set_color(AXIS_LINE_COLOR)
 
 # --- 最終邊距調整 ---
 plt.subplots_adjust(top=0.92, bottom=0.07, left=0.05, right=0.98, hspace=0.2, wspace=0.2)
 
-# 保存圖片（確保路徑可寫入）
+# 保存圖片（確保路徑可寫入，暗黑模式下保存為黑色背景）
 try:
-    plt.savefig('taipei_burger_final.png', dpi=300, bbox_inches='tight', facecolor='white')
-    print("✅ 圖片已成功保存為 taipei_burger_final.png")
+    plt.savefig('taipei_burger_final_dark.png', dpi=300, bbox_inches='tight', facecolor='black')
+    print("✅ 暗黑模式圖片已成功保存為 taipei_burger_final_dark.png")
 except Exception as e:
     print(f"⚠️ 保存圖片失敗：{e}")
     print("💡 建議：請檢查當前目錄的寫入權限，或更換保存路徑")
